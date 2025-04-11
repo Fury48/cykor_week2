@@ -34,13 +34,19 @@ void bash(char* user, char* host) {
 
 	// 최초 실행 시 버퍼에 남은 개행 제거
 	while ((input_buffer = getchar()) != '\n' && input_buffer != EOF);
+
+	//프롬프트 입력받기
 	while (1) {
 		printf("%s@%s:/", user, host);
-		//....
+		//....(경로 구현)
 		printf("$ ");
 		fgets(command, COMMAND_SIZE, stdin);
 		// 개행 문자 제거
 		command[strcspn(command, "\n")] = '\0';
+		if (strcmp(command, "exit") == 0) {
+			printf("BASH를 종료합니다.");
+			return;
+		}
 		printf("%s\n", command);
 
 	}
