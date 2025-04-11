@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#define COMMAND_SIZE 100
 
 //bash의 유저네임과 호스트네임 선언
 char username[50];
@@ -28,12 +29,18 @@ int main(){
 
 //리눅스 bash셸의 기본적인 인터페이스 및 명령어 입력받기
 void bash(char* user, char* host) {
-	char command[50];
+	char command[COMMAND_SIZE];
+	int input_buffer;
+
+	// 최초 실행 시 버퍼에 남은 개행 제거
+	while ((input_buffer = getchar()) != '\n' && input_buffer != EOF);
 	while (1) {
 		printf("%s@%s:/", user, host);
 		//....
 		printf("$ ");
-		scanf_s("%s",command,50);
+		fgets(command, COMMAND_SIZE, stdin);
+		// 개행 문자 제거
+		command[strcspn(command, "\n")] = '\0';
 		printf("%s\n", command);
 
 	}
