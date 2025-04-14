@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <string.h>
+#include <direct.h>
+
 #define COMMAND_SIZE 100
 
 //bash의 유저네임과 호스트네임 선언
 char username[50];
 char hostname[50];
-char prompt[50][50];
+char path[50];
 
 void bash(char* user, char* host);
 
@@ -15,11 +17,6 @@ int main(){
 	scanf_s("%s", username,50u);
 	printf("Enter hostname:");
 	scanf_s("%s", hostname,50u);
-
-	//프롬프트에 유저네임과 호스트네임 추가
-	sprintf_s(prompt[0], sizeof(prompt[0]), "%s", username);
-	sprintf_s(prompt[1], sizeof(prompt[1]), "%s", username);
-
 
 	//본격적인 bash 실행
 	bash(username, hostname);
@@ -31,6 +28,13 @@ int main(){
 void bash(char* user, char* host) {
 	char command[COMMAND_SIZE];
 	int input_buffer;
+
+	//현재 디렉토리를 /(c://)로 설정
+	if (_chdir("/") != 0) {
+		perror("디렉토리 변경 실패");
+		return;
+	}
+	_getcwd(path, sizeof(path));
 
 	// 최초 실행 시 버퍼에 남은 개행 제거
 	while ((input_buffer = getchar()) != '\n' && input_buffer != EOF);
@@ -47,7 +51,9 @@ void bash(char* user, char* host) {
 			printf("BASH를 종료합니다.");
 			return;
 		}
-		printf("%s\n", command);
-
+		else if (strcmp(command, "pwd") == 0) {
+			printf("%s\n", path);
+		}
+		
 	}
 }
