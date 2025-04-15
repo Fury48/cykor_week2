@@ -14,13 +14,13 @@ void bash(char* user, char* host);
 int main(){
 	//유저네임과 호스트네임 입력받기
 	printf("Enter username:");
-	scanf_s("%s", username,50u);
+	scanf_s("%s", username,50);
 	printf("Enter hostname:");
-	scanf_s("%s", hostname,50u);
+	scanf_s("%s", hostname,50);
 
 	//본격적인 bash 실행
 	bash(username, hostname);
-
+	
 	return 0;
 }
 
@@ -34,15 +34,15 @@ void bash(char* user, char* host) {
 		perror("디렉토리 변경 실패");
 		return;
 	}
-	_getcwd(path, sizeof(path));
+	_getcwd(path, sizeof (path));
 
 	// 최초 실행 시 버퍼에 남은 개행 제거
 	while ((input_buffer = getchar()) != '\n' && input_buffer != EOF);
 
 	//프롬프트 입력받기
 	while (1) {
-		printf("%s@%s:/", user, host);
-		//....(경로 구현)
+		printf("%s@%s:", user, host);
+		printf("%s", path);
 		printf("$ ");
 		fgets(command, COMMAND_SIZE, stdin);
 		// 개행 문자 제거
@@ -54,6 +54,20 @@ void bash(char* user, char* host) {
 		else if (strcmp(command, "pwd") == 0) {
 			printf("%s\n", path);
 		}
+		else if (strcmp(command, "ls") == 0) {
+			printf("하위 디렉토리 출력(미구현)");
+		}
+		else if (strncmp(command, "cd ", 3) == 0) {
+			char* change_path = command + 3;
+			if (_chdir(change_path) != 0) {
+				perror("디렉토리 변경 실패");
+			}
+			else {
+				_getcwd(path, sizeof(path));
+			}
+
+		}
+		else printf("유효한 명령어가 없습니다\n");
 		
 	}
 }
