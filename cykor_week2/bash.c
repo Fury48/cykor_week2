@@ -57,6 +57,7 @@ void bash(char* user, char* host) {
 		else if (strcmp(command, "ls") == 0) {
 			printf("하위 디렉토리 출력(미구현)");
 		}
+		//chdir 통한 cd 구현
 		else if (strncmp(command, "cd ", 3) == 0) {
 			char* change_path = command + 3;
 			if (_chdir(change_path) != 0) {
