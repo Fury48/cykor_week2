@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <dirent.h>
 
 #define COMMAND_SIZE 10
 
@@ -28,6 +29,8 @@ int main(){
 void bash(char* user, char* host) {
 	char command[COMMAND_SIZE];
 	int input_buffer;
+	DIR* dir;
+	struct dirent* ent;
 
 	//현재 디렉토리를 /(c://)로 설정
 	if (chdir("/") != 0) {
@@ -41,6 +44,7 @@ void bash(char* user, char* host) {
 
 	//프롬프트 입력받기
 	while (1) {
+		dir = opendir(".");
 		printf("%s@%s:", user, host);
 		printf("%s", path);
 		printf("$ ");
@@ -48,14 +52,12 @@ void bash(char* user, char* host) {
 		// 개행 문자 제거
 		command[strcspn(command, "\n")] = '\0';
 		if (strcmp(command, "exit") == 0) {
-			printf("BASH를 종료합니다.");
+			printf("BASH를 종료합니다.\n");
 			return;
 		}
+		//pwd 구현
 		else if (strcmp(command, "pwd") == 0) {
 			printf("%s\n", path);
-		}
-		else if (strcmp(command, "ls") == 0) {
-			printf("하위 디렉토리 출력(미구현)");
 		}
 		//chdir 통한 cd 구현
 		else if (strncmp(command, "cd ", 3) == 0) {
@@ -68,7 +70,12 @@ void bash(char* user, char* host) {
 			}
 
 		}
-		else printf("유효한 명령어가 없습니다\n");
+		//ls 구현
+		else if (strcmp(command, "ls") == 0) {
+			while ((ent = readdir(dir)) != NULL) {
+				printf("%s\n", ent->d_name);
+			}
+		}
 		
 	}
 }
