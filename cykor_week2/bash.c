@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <string.h>
-#include <direct.h>
+#include <unistd.h>
 
-#define COMMAND_SIZE 100
+#define COMMAND_SIZE 10
 
-//bashÀÇ À¯Àú³×ÀÓ°ú È£½ºÆ®³×ÀÓ ¼±¾ğ
+//bashì˜ ìœ ì €ë„¤ì„ê³¼ í˜¸ìŠ¤íŠ¸ë„¤ì„ ì„ ì–¸
 char username[50];
 char hostname[50];
 char path[50];
@@ -12,63 +12,63 @@ char path[50];
 void bash(char* user, char* host);
 
 int main(){
-	//À¯Àú³×ÀÓ°ú È£½ºÆ®³×ÀÓ ÀÔ·Â¹Ş±â
+	//ìœ ì €ë„¤ì„ê³¼ í˜¸ìŠ¤íŠ¸ë„¤ì„ ì…ë ¥ë°›ê¸°
 	printf("Enter username:");
-	scanf_s("%s", username,50);
+	scanf("%s", username);
 	printf("Enter hostname:");
-	scanf_s("%s", hostname,50);
+	scanf("%s", hostname);
 
-	//º»°İÀûÀÎ bash ½ÇÇà
+	//ë³¸ê²©ì ì¸ bash ì‹¤í–‰
 	bash(username, hostname);
 	
 	return 0;
 }
 
-//¸®´ª½º bash¼ĞÀÇ ±âº»ÀûÀÎ ÀÎÅÍÆäÀÌ½º ¹× ¸í·É¾î ÀÔ·Â¹Ş±â
+//ë¦¬ëˆ…ìŠ¤ bashì…¸ì˜ ê¸°ë³¸ì ì¸ ì¸í„°í˜ì´ìŠ¤ ë° ëª…ë ¹ì–´ ì…ë ¥ë°›ê¸°
 void bash(char* user, char* host) {
 	char command[COMMAND_SIZE];
 	int input_buffer;
 
-	//ÇöÀç µğ·ºÅä¸®¸¦ /(c://)·Î ¼³Á¤
-	if (_chdir("/") != 0) {
-		perror("µğ·ºÅä¸® º¯°æ ½ÇÆĞ");
+	//í˜„ì¬ ë””ë ‰í† ë¦¬ë¥¼ /(c://)ë¡œ ì„¤ì •
+	if (chdir("/") != 0) {
+		perror("ë””ë ‰í† ë¦¬ ë³€ê²½ ì‹¤íŒ¨");
 		return;
 	}
-	_getcwd(path, sizeof (path));
+	getcwd(path, sizeof (path));
 
-	// ÃÖÃÊ ½ÇÇà ½Ã ¹öÆÛ¿¡ ³²Àº °³Çà Á¦°Å
+	// ìµœì´ˆ ì‹¤í–‰ ì‹œ ë²„í¼ì— ë‚¨ì€ ê°œí–‰ ì œê±°
 	while ((input_buffer = getchar()) != '\n' && input_buffer != EOF);
 
-	//ÇÁ·ÒÇÁÆ® ÀÔ·Â¹Ş±â
+	//í”„ë¡¬í”„íŠ¸ ì…ë ¥ë°›ê¸°
 	while (1) {
 		printf("%s@%s:", user, host);
 		printf("%s", path);
 		printf("$ ");
 		fgets(command, COMMAND_SIZE, stdin);
-		// °³Çà ¹®ÀÚ Á¦°Å
+		// ê°œí–‰ ë¬¸ì ì œê±°
 		command[strcspn(command, "\n")] = '\0';
 		if (strcmp(command, "exit") == 0) {
-			printf("BASH¸¦ Á¾·áÇÕ´Ï´Ù.");
+			printf("BASHë¥¼ ì¢…ë£Œí•©ë‹ˆë‹¤.");
 			return;
 		}
 		else if (strcmp(command, "pwd") == 0) {
 			printf("%s\n", path);
 		}
 		else if (strcmp(command, "ls") == 0) {
-			printf("ÇÏÀ§ µğ·ºÅä¸® Ãâ·Â(¹Ì±¸Çö)");
+			printf("í•˜ìœ„ ë””ë ‰í† ë¦¬ ì¶œë ¥(ë¯¸êµ¬í˜„)");
 		}
-		//chdir ÅëÇÑ cd ±¸Çö
+		//chdir í†µí•œ cd êµ¬í˜„
 		else if (strncmp(command, "cd ", 3) == 0) {
 			char* change_path = command + 3;
-			if (_chdir(change_path) != 0) {
-				perror("µğ·ºÅä¸® º¯°æ ½ÇÆĞ");
+			if (chdir(change_path) != 0) {
+				perror("ë””ë ‰í† ë¦¬ ë³€ê²½ ì‹¤íŒ¨");
 			}
 			else {
-				_getcwd(path, sizeof(path));
+				getcwd(path, sizeof(path));
 			}
 
 		}
-		else printf("À¯È¿ÇÑ ¸í·É¾î°¡ ¾ø½À´Ï´Ù\n");
+		else printf("ìœ íš¨í•œ ëª…ë ¹ì–´ê°€ ì—†ìŠµë‹ˆë‹¤\n");
 		
 	}
 }
