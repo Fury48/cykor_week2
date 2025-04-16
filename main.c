@@ -10,7 +10,11 @@ char username[50];
 char hostname[50];
 char path[50];
 
+DIR* dir;
+struct dirent* ent;
+
 void bash(char* user, char* host);
+int command_process(char* str);
 
 int main(){
 	//유저네임과 호스트네임 입력받기
@@ -29,8 +33,7 @@ int main(){
 void bash(char* user, char* host) {
 	char command[COMMAND_SIZE];
 	int input_buffer;
-	DIR* dir;
-	struct dirent* ent;
+	
 
 	//현재 디렉토리를 /(c://)로 설정
 	if (chdir("/") != 0) {
@@ -51,31 +54,34 @@ void bash(char* user, char* host) {
 		fgets(command, COMMAND_SIZE, stdin);
 		// 개행 문자 제거
 		command[strcspn(command, "\n")] = '\0';
-		if (strcmp(command, "exit") == 0) {
-			printf("BASH를 종료합니다.\n");
-			return;
-		}
-		//pwd 구현
-		else if (strcmp(command, "pwd") == 0) {
-			printf("%s\n", path);
-		}
-		//chdir 통한 cd 구현
-		else if (strncmp(command, "cd ", 3) == 0) {
-			char* change_path = command + 3;
-			if (chdir(change_path) != 0) {
-				perror("디렉토리 변경 실패");
-			}
-			else {
-				getcwd(path, sizeof(path));
-			}
+		if(command_process(command) == 1) break;
+	}
+}
 
+int command_process(char* str) {
+	if (strcmp(str, "exit") == 0) {
+		printf("BASH를 종료합니다.\n");
+		return 1;
+	}
+	//pwd 구현
+	else if (strcmp(str, "pwd") == 0) {
+		printf("%s\n", path);
+	}
+	//chdir 통한 cd 구현
+	else if (strncmp(str, "cd ", 3) == 0) {
+		char* change_path = str + 3;
+		if (chdir(change_path) != 0) {
+			perror("디렉토리 변경 실패");
 		}
-		//ls 구현
-		else if (strcmp(command, "ls") == 0) {
-			while ((ent = readdir(dir)) != NULL) {
-				printf("%s\n", ent->d_name);
-			}
+		else {
+			getcwd(path, sizeof(path));
 		}
-		
+
+	}
+	//ls 구현
+	else if (strcmp(str, "ls") == 0) {
+		while ((ent = readdir(dir)) != NULL) {
+			printf("%s\n", ent->d_name);
+		}
 	}
 }
