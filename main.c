@@ -10,9 +10,11 @@ char username[50];
 char hostname[50];
 char path[50];
 
+//디렉토리 관련 구조체 변수 선언
 DIR* dir;
 struct dirent* ent;
 
+//함수 원형 선언
 void bash(char* user, char* host);
 int command_process(char* str);
 
@@ -45,8 +47,9 @@ void bash(char* user, char* host) {
 	// 최초 실행 시 버퍼에 남은 개행 제거
 	while ((input_buffer = getchar()) != '\n' && input_buffer != EOF);
 
-	//프롬프트 입력받기
+	//명령어 입력받기 프롬프트
 	while (1) {
+		//프롬프트 형식식
 		dir = opendir(".");
 		printf("%s@%s:", user, host);
 		printf("%s", path);
@@ -58,7 +61,17 @@ void bash(char* user, char* host) {
 	}
 }
 
+//명령어 수행 함수
 int command_process(char* str) {
+	// 명령어 시작이 공백일시 문자열을 앞으로 땡김
+	int i = 0;
+    while (str[i] == ' ') {
+        i++;
+    }
+    if (i > 0) {
+        memmove(str, str + i, strlen(str + i) + 1);
+    }
+	// exit 구현
 	if (strcmp(str, "exit") == 0) {
 		printf("BASH를 종료합니다.\n");
 		return 1;
@@ -83,5 +96,19 @@ int command_process(char* str) {
 		while ((ent = readdir(dir)) != NULL) {
 			printf("%s\n", ent->d_name);
 		}
+	}
+	//다중명령어1: ; 구현
+	else if (strstr(str,";")!=NULL) {
+		char* bookmark = strstr(str,";");
+		char front_command[COMMAND_SIZE], back_command[COMMAND_SIZE];
+
+		int bookmark_length = bookmark - str;
+		strncpy(front_command,str,bookmark_length);
+		front_command[bookmark_length] = '\0';
+		strcpy(back_command,bookmark+1);
+
+		command_process(front_command);
+		command_process(back_command);
+
 	}
 }
