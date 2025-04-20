@@ -17,6 +17,7 @@ struct dirent* ent;
 //함수 원형 선언
 void bash(char* user, char* host);
 int command_process(char* str);
+void remove_space(char* b); 
 
 int main(){
 	//유저네임과 호스트네임 입력받기
@@ -49,7 +50,7 @@ void bash(char* user, char* host) {
 
 	//명령어 입력받기 프롬프트
 	while (1) {
-		//프롬프트 형식식
+		//프롬프트 형식
 		dir = opendir(".");
 		printf("%s@%s:", user, host);
 		printf("%s", path);
@@ -60,17 +61,41 @@ void bash(char* user, char* host) {
 		if(command_process(command) == 1) break;
 	}
 }
+// 문장의 앞 뒤 공백 삭제
+void remove_space(char* b) {
+    int i=0;
+    while(b[i] == ' ') i++;
+    if (i > 0) memmove(b, b + i, strlen(b + i) + 1);
 
+	int len = strlen(b);
+    while (len > 0 && b[len - 1] == ' ') {
+        b[len - 1] = '\0';
+        len--;
+	}
+}
 //명령어 수행 함수
 int command_process(char* str) {
-	// 명령어 시작이 공백일시 문자열을 앞으로 땡김
-	int i = 0;
-    while (str[i] == ' ') {
-        i++;
-    }
-    if (i > 0) {
-        memmove(str, str + i, strlen(str + i) + 1);
-    }
+	remove_space(str);
+
+	//다중명령어1: ; 구현
+	if (strstr(str,";")!=NULL) {
+		char* bookmark = strstr(str,";");
+		char front_command[COMMAND_SIZE], back_command[COMMAND_SIZE];
+		int bookmark_length = bookmark - str;
+
+		strncpy(front_command,str,bookmark_length);
+		front_command[bookmark_length] = '\0';
+		remove_space(front_command);
+
+		strcpy(back_command,bookmark+1);
+		remove_space(back_command);
+
+		command_process(front_command);
+		command_process(back_command);
+
+		return 0;
+	}
+	
 	// exit 구현
 	if (strcmp(str, "exit") == 0) {
 		printf("BASH를 종료합니다.\n");
@@ -91,24 +116,12 @@ int command_process(char* str) {
 		}
 
 	}
-	//ls 구현
+	// ls 구현
 	else if (strcmp(str, "ls") == 0) {
 		while ((ent = readdir(dir)) != NULL) {
 			printf("%s\n", ent->d_name);
 		}
 	}
-	//다중명령어1: ; 구현
-	else if (strstr(str,";")!=NULL) {
-		char* bookmark = strstr(str,";");
-		char front_command[COMMAND_SIZE], back_command[COMMAND_SIZE];
-
-		int bookmark_length = bookmark - str;
-		strncpy(front_command,str,bookmark_length);
-		front_command[bookmark_length] = '\0';
-		strcpy(back_command,bookmark+1);
-
-		command_process(front_command);
-		command_process(back_command);
-
-	}
+	return 0;
 }
+
