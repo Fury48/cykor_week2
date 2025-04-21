@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <dirent.h>
 
-#define COMMAND_SIZE 10
+#define COMMAND_SIZE 256
 
 //bash의 유저네임과 호스트네임 선언
 char username[50];
@@ -97,7 +97,7 @@ int command_process(char* str) {
 	}
 	
 	// exit 구현
-	if (strcmp(str, "exit") == 0) {
+	else if (strcmp(str, "exit") == 0) {
 		printf("BASH를 종료합니다.\n");
 		return 1;
 	}
