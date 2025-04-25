@@ -21,6 +21,7 @@ void remove_space(char* b);
 
 int main(){
 	//유저네임과 호스트네임 입력받기
+	// 버퍼 오버플로우 문제 대비비
 	printf("Enter username:");
 	scanf("%s", username);
 	printf("Enter hostname:");
@@ -58,7 +59,8 @@ void bash(char* user, char* host) {
 		fgets(command, COMMAND_SIZE, stdin);
 		// 개행 문자 제거
 		command[strcspn(command, "\n")] = '\0';
-		if(command_process(command) == 1) break;
+		
+		if(command_process(command) == 2) break;
 	}
 }
 // 문장의 앞 뒤 공백 삭제
@@ -74,6 +76,13 @@ void remove_space(char* b) {
 	}
 }
 //명령어 수행 함수
+
+/*
+	파이프라인 구현은 exec 시스템콜 사용하기
+	명령어 수행 성공시 반환값 --> 1
+	명령어 수행 실패시 반환값 --> 0
+*/
+
 int command_process(char* str) {
 	remove_space(str);
 
@@ -93,26 +102,35 @@ int command_process(char* str) {
 		command_process(front_command);
 		command_process(back_command);
 
-		return 0;
+		return 1;
+	}
+	//다중명령어2: && 구현
+	else if (strstr(str,"&&") != NULL || strstr(str,"||") != NULL){
+		char token[COMMAND_SIZE];
+		
 	}
 	
+
 	// exit 구현
 	else if (strcmp(str, "exit") == 0) {
 		printf("BASH를 종료합니다.\n");
-		return 1;
+		return 2;
 	}
 	//pwd 구현
 	else if (strcmp(str, "pwd") == 0) {
 		printf("%s\n", path);
+		return 1;
 	}
 	//chdir 통한 cd 구현
 	else if (strncmp(str, "cd ", 3) == 0) {
 		char* change_path = str + 3;
 		if (chdir(change_path) != 0) {
 			perror("디렉토리 변경 실패");
+			return 0;
 		}
 		else {
 			getcwd(path, sizeof(path));
+			return 1;
 		}
 
 	}
@@ -120,8 +138,51 @@ int command_process(char* str) {
 	else if (strcmp(str, "ls") == 0) {
 		while ((ent = readdir(dir)) != NULL) {
 			printf("%s\n", ent->d_name);
+			return 1;
 		}
 	}
-	return 0;
+	else {
+		printf("유효하지 않은 명령어입니다\n");
+		return 0;
+	}
 }
 
+
+// 문자열 파싱 알고리즘
+/*
+#include <stdio.h>
+#include <string.h>
+
+int main() {
+    char str[] = "abcd && EFGH||1234 && adsadsad ||     1283   9032189     ";
+    char token[100][100];
+    int pars = 0;
+    
+    if (strstr(str,"&&") != NULL || strstr(str,"||") != NULL) {
+        
+        char *ptr;
+        char *start = str;
+        int len;
+        
+        
+        for(int i = 0; i < strlen(str);i++) {
+            if((str[i] == '&' && str[i+1] == '&') || (str[i] == '|' && str[i+1] == '|')){
+                ptr = &str[i];
+                len = ptr - start;
+                strncpy(token[pars],start,len);
+                start = ptr + 2;
+                pars++;
+                //다중명령어 저장
+                if(str[i] == '&') strcpy(token[pars],"&&");
+                else strcpy(token[pars],"||");
+                pars ++;
+                //여기까지는 다중명령어 기준 '앞' 명령어 들만 저장하는 코드임. 
+            }
+        }
+        //마지막 다중명령어 기준 '뒤' 명령어 저장
+        strcpy(token[pars],start);
+        pars++;
+    }
+
+}
+*/
