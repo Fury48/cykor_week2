@@ -2,6 +2,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <stdlib.h>
 
 #define COMMAND_SIZE 256
 
@@ -18,6 +21,9 @@ struct dirent* ent;
 void bash(char* user, char* host);
 int command_process(char* str);
 void remove_space(char* b); 
+
+//background 변수 선언
+int background = 0;
 
 int main(){
 	//유저네임과 호스트네임 입력받기
@@ -56,7 +62,7 @@ void bash(char* user, char* host) {
 		printf("%s@%s:", user, host);
 		printf("%s", path);
 		printf("$ ");
-		fgets(command, COMMAND_SIZE, stdin);
+		if(fgets(command, COMMAND_SIZE, stdin)==NULL) continue;
 		// 개행 문자 제거
 		command[strcspn(command, "\n")] = '\0';
 		
@@ -104,12 +110,81 @@ int command_process(char* str) {
 
 		return 1;
 	}
-	//다중명령어2: && 구현
-	else if (strstr(str,"&&") != NULL || strstr(str,"||") != NULL){
-		char token[COMMAND_SIZE];
+	//문자열 파싱 및 다중명령어 &&, || 구현현
+	// else if (strstr(str,"&&") != NULL || strstr(str,"||") != NULL) {
+    // 	char token[COMMAND_SIZE][COMMAND_SIZE];
+	// 	char result[COMMAND_SIZE] = -1;
+    // 	int pars = 0;
+    //     char *ptr;
+    //     char *start = str;
+    //     int len;
+        
+        
+    //     for(int i = 0; i < strlen(str);i++) {
+    //         if((str[i] == '&' && str[i+1] == '&') || (str[i] == '|' && str[i+1] == '|')){
+    //             ptr = &str[i];
+    //             len = ptr - start;
+    //             strncpy(token[pars],start,len);
+    //             start = ptr + 2;
+    //             pars++;
+    //             //다중명령어 저장
+    //             if(str[i] == '&') strcpy(token[pars],"&&");
+    //             else strcpy(token[pars],"||");
+    //             pars ++;
+    //             //여기까지는 다중명령어 기준 '앞' 명령어 들만 저장하는 코드임. 
+    //         }
+    //     }
+    //     //마지막 다중명령어 기준 '뒤' 명령어 저장
+    //     strcpy(token[pars],start);
+    //     pars++;
+
+	// 	//반환값 확인을 위해 출력 막기
+	// 	fflush(stdout);
+	// 	FILE* temp = freopen("/dev/null", "w", stdout);
+	// 	//파싱된 명령어들의 수행 반환값 저장 
+	// 	for (int i = 0;i<pars;i++) {
+	// 		if (token[i] != "&&" && token[i] != "||") result[i] = command_process(token[i]);
+	// 		else result[i] = token[i];
+	// 	}
+	// 	//출력 정상화 
+	// 	freopen("/dev/tty", "w", stdout);
+
+	// 	//반환값 토대로 다중명령어 연산 결과 출력 ....
+    //}
+	// 백그라운드 실행 구현
+	else if (strrchr(str,'&')!=NULL){
+		char* bg = strrchr(str,'&');
+        char bgcmd[50];
+		int bg_length = bg - str;
+
+		strncpy(bgcmd,str,bg_length);
+		bgcmd[bg_length] = '\0';
 		
+		background = 1;
+		//자식 프로세스 생성
+		pid_t pid = fork();
+
+
+		if (pid < 0) {
+			perror("fork 실패");
+		}
+		else if (pid == 0) {
+			// 자식 프로세스: 실제 명령 실행
+			command_process(bgcmd);
+			exit(0);
+		}
+		//부모 프로세스 	
+		else { 
+			if(background) {
+				//실행 여부 및 자식 프로세스의 식별 ID 출력
+				printf("백그라운드 실행중\t [pid: %d]\n",pid);
+				fflush(stdout);
+			} else {
+				waitpid(pid,NULL,0);
+			}
+			return 1;
+		}
 	}
-	
 
 	// exit 구현
 	else if (strcmp(str, "exit") == 0) {
