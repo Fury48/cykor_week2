@@ -110,7 +110,7 @@ int command_process(char* str) {
 
 		return 1;
 	}
-	//문자열 파싱 및 다중명령어 &&, || 구현현
+	//문자열 파싱 및 다중명령어 &&, || 구현
 	// else if (strstr(str,"&&") != NULL || strstr(str,"||") != NULL) {
     // 	char token[COMMAND_SIZE][COMMAND_SIZE];
 	// 	char result[COMMAND_SIZE] = -1;
@@ -151,6 +151,8 @@ int command_process(char* str) {
 
 	// 	//반환값 토대로 다중명령어 연산 결과 출력 ....
     //}
+	// 파이프라인 구현
+	
 	// 백그라운드 실행 구현
 	else if (strrchr(str,'&')!=NULL){
 		char* bg = strrchr(str,'&');
@@ -213,51 +215,26 @@ int command_process(char* str) {
 	else if (strcmp(str, "ls") == 0) {
 		while ((ent = readdir(dir)) != NULL) {
 			printf("%s\n", ent->d_name);
-			return 1;
 		}
+		return 1;
 	}
-	else {
-		printf("유효하지 않은 명령어입니다\n");
-		return 0;
-	}
-}
-
-
-// 문자열 파싱 알고리즘
-/*
-#include <stdio.h>
-#include <string.h>
-
-int main() {
-    char str[] = "abcd && EFGH||1234 && adsadsad ||     1283   9032189     ";
-    char token[100][100];
-    int pars = 0;
-    
-    if (strstr(str,"&&") != NULL || strstr(str,"||") != NULL) {
-        
-        char *ptr;
-        char *start = str;
-        int len;
-        
-        
-        for(int i = 0; i < strlen(str);i++) {
-            if((str[i] == '&' && str[i+1] == '&') || (str[i] == '|' && str[i+1] == '|')){
-                ptr = &str[i];
-                len = ptr - start;
-                strncpy(token[pars],start,len);
-                start = ptr + 2;
-                pars++;
-                //다중명령어 저장
-                if(str[i] == '&') strcpy(token[pars],"&&");
-                else strcpy(token[pars],"||");
-                pars ++;
-                //여기까지는 다중명령어 기준 '앞' 명령어 들만 저장하는 코드임. 
-            }
+	else {  // 이 외의 단일 명령어 실행
+        pid_t pid = fork();
+        if (pid == -1) {
+            perror("fork");
+            return -1;
         }
-        //마지막 다중명령어 기준 '뒤' 명령어 저장
-        strcpy(token[pars],start);
-        pars++;
+
+        if (pid == 0) {  // 자식 프로세스
+            execlp("/bin/sh", "sh", "-c", str, NULL);  // 단일 명령어 직접 실행
+            perror("execlp");
+            exit(0);
+        } else {
+            waitpid(pid,NULL,0);  // 자식 프로세스 종료 대기
+            return 1;
+        }
     }
 
 }
-*/
+
+
