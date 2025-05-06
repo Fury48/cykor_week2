@@ -45,7 +45,7 @@ void bash(char* user, char* host) {
 	int input_buffer;
 	
 
-	//현재 디렉토리를 /(c://)로 설정
+	//현재 디렉토리를 /로 설정
 	if (chdir("/") != 0) {
 		perror("디렉토리 변경 실패");
 		return;
@@ -152,7 +152,70 @@ int command_process(char* str) {
 	// 	//반환값 토대로 다중명령어 연산 결과 출력 ....
     //}
 	// 파이프라인 구현
-	
+	else if (strstr(str,"|")!= NULL) {
+		char *token = strtok(str, "|");
+		char *commands[COMMAND_SIZE];
+		int pipe_fd[COMMAND_SIZE - 1][2];
+		int num_commands = 0;
+
+		while (token != NULL && num_commands < COMMAND_SIZE) {
+    		commands[num_commands++] = token;
+    		token = strtok(NULL, "|");
+		}
+
+		// 개수만큼 파이프 생성
+		for (int i = 0; i < num_commands - 1; i++) {
+    		if (pipe(pipe_fd[i]) == -1) {
+        		perror("pipe");
+        		exit(EXIT_FAILURE);
+    		}
+		}
+
+		// 각 명령어 실행
+		for (int i = 0; i < num_commands; i++) {
+    		pid_t pid = fork();
+    		if (pid == -1) {
+        		perror("fork");
+        		exit(EXIT_FAILURE);
+    		}
+
+    		if (pid == 0) {  
+				// 이전 프로세스에서 입력 받기
+        		if (i > 0) { 
+            		dup2(pipe_fd[i - 1][0], STDIN_FILENO);
+            		close(pipe_fd[i - 1][0]);
+        		}
+				// 다음 프로세스로 출력 보내기
+        		if (i < num_commands - 1) { 
+            		dup2(pipe_fd[i][1], STDOUT_FILENO);
+            		close(pipe_fd[i][1]);
+        		}
+
+        // 파일 디스크립터 닫기
+        		for (int j = 0; j < num_commands - 1; j++) {
+            		close(pipe_fd[j][0]);
+            		close(pipe_fd[j][1]);
+        		}
+
+        		char *args[] = {"/bin/sh", "-c", commands[i], NULL};
+        		execvp(args[0], args);
+        		perror("execvp");
+        		exit(0);
+    		}
+		}
+
+		// 부모 프로세스에서 파일 디스크립터 닫고 기다리기기
+		for (int i = 0; i < num_commands - 1; i++) {
+    		close(pipe_fd[i][0]);
+    		close(pipe_fd[i][1]);
+		}
+
+		for (int i = 0; i < num_commands; i++) {
+    		wait(NULL);
+		}
+
+		return 0;
+	}
 	// 백그라운드 실행 구현
 	else if (strrchr(str,'&')!=NULL){
 		char* bg = strrchr(str,'&');
