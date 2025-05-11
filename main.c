@@ -111,47 +111,41 @@ int command_process(char* str) {
 		return 1;
 	}
 	//문자열 파싱 및 다중명령어 &&, || 구현
-	// else if (strstr(str,"&&") != NULL || strstr(str,"||") != NULL) {
-    // 	char token[COMMAND_SIZE][COMMAND_SIZE];
-	// 	char result[COMMAND_SIZE] = -1;
-    // 	int pars = 0;
-    //     char *ptr;
-    //     char *start = str;
-    //     int len;
-        
-        
-    //     for(int i = 0; i < strlen(str);i++) {
-    //         if((str[i] == '&' && str[i+1] == '&') || (str[i] == '|' && str[i+1] == '|')){
-    //             ptr = &str[i];
-    //             len = ptr - start;
-    //             strncpy(token[pars],start,len);
-    //             start = ptr + 2;
-    //             pars++;
-    //             //다중명령어 저장
-    //             if(str[i] == '&') strcpy(token[pars],"&&");
-    //             else strcpy(token[pars],"||");
-    //             pars ++;
-    //             //여기까지는 다중명령어 기준 '앞' 명령어 들만 저장하는 코드임. 
-    //         }
-    //     }
-    //     //마지막 다중명령어 기준 '뒤' 명령어 저장
-    //     strcpy(token[pars],start);
-    //     pars++;
+	else if (strstr(str, "||") != NULL || strstr(str, "&&") != NULL) {
+    	char *commands[COMMAND_SIZE];
+    	int num_commands = 0;
+    	int success = 0;  
 
-	// 	//반환값 확인을 위해 출력 막기
-	// 	fflush(stdout);
-	// 	FILE* temp = freopen("/dev/null", "w", stdout);
-	// 	//파싱된 명령어들의 수행 반환값 저장 
-	// 	for (int i = 0;i<pars;i++) {
-	// 		if (token[i] != "&&" && token[i] != "||") result[i] = command_process(token[i]);
-	// 		else result[i] = token[i];
-	// 	}
-	// 	//출력 정상화 
-	// 	freopen("/dev/tty", "w", stdout);
+    	// && 연산자 우선 분리
+    	char *token = strtok(str, "&&");
+    	while (token != NULL && num_commands < COMMAND_SIZE) {
+        	commands[num_commands++] = token;
+        	token = strtok(NULL, "&&");
+    	}
 
-	// 	//반환값 토대로 다중명령어 연산 결과 출력 ....
-    //}
-	// 파이프라인 구현
+    	for (int i = 0; i < num_commands; i++) {
+        	char *sub_commands[COMMAND_SIZE];
+        	int sub_num = 0;
+
+        	// || 연산자 분리 (strtok 로직에 따라 || 없을시 '그대로' 토큰에 저장!)
+        	token = strtok(commands[i], "||");
+        	while (token != NULL && sub_num < COMMAND_SIZE) {
+            	sub_commands[sub_num++] = token;
+            	token = strtok(NULL, "||");
+        	}
+
+        	for (int j = 0; j < sub_num; j++) {
+            	success = command_process(sub_commands[j]); 
+
+            	// OR 연산자 하나라도 성공시 탈출
+            	if (success) break;
+        	}
+
+        	// AND에서 실패시 전체 중단
+        	if (!success) break;
+    	}
+	}
+		// 파이프라인 구현
 	else if (strstr(str,"|")!= NULL) {
 		char *token = strtok(str, "|");
 		char *commands[COMMAND_SIZE];
@@ -167,16 +161,16 @@ int command_process(char* str) {
 		for (int i = 0; i < num_commands - 1; i++) {
     		if (pipe(pipe_fd[i]) == -1) {
         		perror("pipe");
-        		exit(EXIT_FAILURE);
+        		exit(0);
     		}
 		}
 
-		// 각 명령어 실행
+		
 		for (int i = 0; i < num_commands; i++) {
     		pid_t pid = fork();
     		if (pid == -1) {
         		perror("fork");
-        		exit(EXIT_FAILURE);
+        		exit(0);
     		}
 
     		if (pid == 0) {  
@@ -196,7 +190,8 @@ int command_process(char* str) {
             		close(pipe_fd[j][0]);
             		close(pipe_fd[j][1]);
         		}
-
+				
+				// 각 명령어 실행
         		char *args[] = {"/bin/sh", "-c", commands[i], NULL};
         		execvp(args[0], args);
         		perror("execvp");
@@ -214,7 +209,7 @@ int command_process(char* str) {
     		wait(NULL);
 		}
 
-		return 0;
+		return 1;
 	}
 	// 백그라운드 실행 구현
 	else if (strrchr(str,'&')!=NULL){
@@ -274,13 +269,7 @@ int command_process(char* str) {
 		}
 
 	}
-	// ls 구현
-	else if (strcmp(str, "ls") == 0) {
-		while ((ent = readdir(dir)) != NULL) {
-			printf("%s\n", ent->d_name);
-		}
-		return 1;
-	}
+
 	else {  // 이 외의 단일 명령어 실행
         pid_t pid = fork();
         if (pid == -1) {
@@ -297,6 +286,8 @@ int command_process(char* str) {
             return 1;
         }
     }
+	
+	return 0;
 
 }
 
