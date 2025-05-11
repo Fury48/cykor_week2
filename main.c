@@ -242,8 +242,8 @@ int command_process(char* str) {
 			} else {
 				waitpid(pid,NULL,0);
 			}
-			return 1;
 		}
+		return 1;
 	}
 
 	// exit 구현
