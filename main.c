@@ -29,9 +29,9 @@ int main(){
 	//유저네임과 호스트네임 입력받기
 	// 버퍼 오버플로우 문제 대비비
 	printf("Enter username:");
-	scanf("%s", username);
+	scanf("%49s", username);
 	printf("Enter hostname:");
-	scanf("%s", hostname);
+	scanf("%49s", hostname);
 
 	//본격적인 bash 실행
 	bash(username, hostname);
